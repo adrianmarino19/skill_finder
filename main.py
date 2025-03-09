@@ -23,7 +23,7 @@ GEM_KEY = os.environ.get("GEM_KEY")
 app = FastAPI(title="Job Helper API")
 
 
-### Middleware
+### Middleware ###
 
 from fastapi.middleware.cors import CORSMiddleware
 
