@@ -22,6 +22,22 @@ GEM_KEY = os.environ.get("GEM_KEY")
 # Initialize FastAPI app
 app = FastAPI(title="Job Helper API")
 
+
+### Middleware
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(title="Job Helper API")
+
+# Add CORS middleware so your frontend can access the backend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for now (adjust for production)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # ----------------------------
 # Utility Functions
 # ----------------------------
