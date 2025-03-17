@@ -232,7 +232,7 @@ def pipeline_endpoint(req: PipelineRequest):
     html_soft = fig_soft.to_html(full_html=False, include_plotlyjs="cdn")
 
     # Return the jobs along with the graph HTML as part of the response.
-    return {"jobs": jobs, "hard_skills_graph": html_hard, "soft_skills_graph": html_soft}
+    return {"hard_skills_graph": html_hard, "soft_skills_graph": html_soft}
 
 
 
