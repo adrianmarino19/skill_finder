@@ -44,10 +44,30 @@
     <button type="submit">Run Pipeline</button>
   </form>
 
-  <h2>Result:</h2>
+  <h2>Hard Skills Graph:</h2>
+  <div id="hardGraphContainer"></div>
+  <h2>Soft Skills Graph:</h2>
+  <div id="softGraphContainer"></div>
+
+  <!-- Optional: Debugging JSON output -->
+  <h2>Raw JSON (for debugging):</h2>
   <pre id="result">Results will appear here...</pre>
 
   <script>
+    // Helper function: executes <script> tags within a container
+    function executeScripts(container) {
+      const scripts = container.querySelectorAll("script");
+      scripts.forEach(oldScript => {
+        const newScript = document.createElement("script");
+        if (oldScript.src) {
+          newScript.src = oldScript.src;
+        } else {
+          newScript.text = oldScript.innerHTML;
+        }
+        document.head.appendChild(newScript);
+      });
+    }
+
     document.getElementById('pipelineForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -71,6 +91,18 @@
           return;
         }
         const data = await response.json();
+
+        // Inject the graph HTML fragments into the page
+        const hardContainer = document.getElementById('hardGraphContainer');
+        const softContainer = document.getElementById('softGraphContainer');
+        hardContainer.innerHTML = data.hard_skills_graph;
+        softContainer.innerHTML = data.soft_skills_graph;
+
+        // Execute the scripts inside those containers
+        executeScripts(hardContainer);
+        executeScripts(softContainer);
+
+        // Optionally, show the raw JSON for debugging
         document.getElementById('result').textContent = JSON.stringify(data, null, 2);
       } catch (error) {
         document.getElementById('result').textContent = "Error: " + error;
