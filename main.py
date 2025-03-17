@@ -11,6 +11,8 @@ from nltk.corpus import stopwords
 import json
 from google import genai
 from collections import Counter
+import pandas as pd
+import plotly.express as px
 
 # Load environment variables from .env file
 load_dotenv()
@@ -165,8 +167,10 @@ def pipeline_endpoint(req: PipelineRequest):
                        "AppleWebKit/537.36 (KHTML, like Gecko) "
                        "Chrome/91.0.4472.124 Safari/537.36")
     }
+    # Scrape job postings using the provided parameters
     jobs = scrape_jobs_with_descriptions(req.keywords, req.location, req.f_WT, req.pages_to_scrape, headers)
-    # Example: For each job, extract skills using the Gemini API
+
+    # For each job, extract skills using the Gemini API
     for job in jobs:
         prompt = (
             "Extract the relevant hard skills and soft skills from the following job description. "
@@ -180,4 +184,79 @@ def pipeline_endpoint(req: PipelineRequest):
         except Exception as e:
             skills = {"hard_skills": [], "soft_skills": []}
         job["extracted_skills"] = skills
-    return {"jobs": jobs}
+
+    # ---------------------------
+    # Aggregate the skills across all jobs
+    # ---------------------------
+    hard_skills_counter = Counter()
+    soft_skills_counter = Counter()
+    for job in jobs:
+        skills = job.get("extracted_skills", {})
+        hard_skills_counter.update(skills.get("hard_skills", []))
+        soft_skills_counter.update(skills.get("soft_skills", []))
+
+    # Create DataFrames for visualization.
+    df_hard = pd.DataFrame(hard_skills_counter.items(), columns=["Skill", "Frequency"])
+    df_soft = pd.DataFrame(soft_skills_counter.items(), columns=["Skill", "Frequency"])
+
+    # ---------------------------
+    # GRAPH CODE ADDED: Generate Plotly graphs as HTML snippets
+    # ---------------------------
+    df_hard_sorted = df_hard.sort_values("Frequency", ascending=False)
+    df_soft_sorted = df_soft.sort_values("Frequency", ascending=False)
+
+    fig_hard = px.bar(
+        df_hard_sorted,
+        x="Skill",
+        y="Frequency",
+        title="Top Hard Skills",
+        labels={"Skill": "Hard Skill", "Frequency": "Count"},
+        color="Frequency",
+        color_continuous_scale="Blues"
+    )
+    fig_hard.update_layout(xaxis_tickangle=-45)
+
+    fig_soft = px.bar(
+        df_soft_sorted,
+        x="Skill",
+        y="Frequency",
+        title="Top Soft Skills",
+        labels={"Skill": "Soft Skill", "Frequency": "Count"},
+        color="Frequency",
+        color_continuous_scale="Blues"
+    )
+    fig_soft.update_layout(xaxis_tickangle=-45)
+
+    # Instead of .show(), convert graphs to HTML fragments.
+    html_hard = fig_hard.to_html(full_html=False, include_plotlyjs="cdn")
+    html_soft = fig_soft.to_html(full_html=False, include_plotlyjs="cdn")
+
+    # Return the jobs along with the graph HTML as part of the response.
+    return {"jobs": jobs, "hard_skills_graph": html_hard, "soft_skills_graph": html_soft}
+
+
+
+### BEFORE
+# @app.post("/pipeline")
+# def pipeline_endpoint(req: PipelineRequest):
+#     headers = {
+#         "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+#                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+#                        "Chrome/91.0.4472.124 Safari/537.36")
+#     }
+#     jobs = scrape_jobs_with_descriptions(req.keywords, req.location, req.f_WT, req.pages_to_scrape, headers)
+#     # Example: For each job, extract skills using the Gemini API
+#     for job in jobs:
+#         prompt = (
+#             "Extract the relevant hard skills and soft skills from the following job description. "
+#             "Return a JSON object with exactly two keys: 'hard_skills' and 'soft_skills', mapping to arrays of strings.\n\n"
+#             f"Job Description: {job['description']}"
+#         )
+#         response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
+#         cleaned = clean_json_output(response.text)
+#         try:
+#             skills = json.loads(cleaned)
+#         except Exception as e:
+#             skills = {"hard_skills": [], "soft_skills": []}
+#         job["extracted_skills"] = skills
+#     return {"jobs": jobs}
