@@ -149,9 +149,9 @@ def run_pipeline(keywords: str, location: str, f_WT: str, pages_to_scrape: int):
 
 ### Streamlit UI ###
 def main():
-    st.title("Job Helper Dashboard")
+    st.title("Job Helper")
     st.write("Enter parameters to run the pipeline:")
-    keywords = st.text_input("Keywords", "software engineer")
+    keywords = st.text_input("Title, skill, or company", "software engineer")
     location = st.text_input("Location", "New York, USA")
     f_WT = st.text_input("Work Type (f_WT)", "2")
     pages_to_scrape = st.number_input("Pages to Scrape", value=1, min_value=1)
