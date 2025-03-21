@@ -5,18 +5,22 @@ import plotly.express as px
 from collections import Counter
 
 # Import shared functions from backend.py
-from backend import scrape_jobs_with_descriptions, extract_skills
+from backend import scrape_jobs_with_descriptions, extract_skills, batch_extract_skills
 
-def run_pipeline(keywords: str, location: str, f_WT: str, pages_to_scrape: int):
+def run_pipeline(keywords: str, location: str, f_WT: str, pages_to_scrape: int, batch_size: int):
     headers = {
         "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                        "AppleWebKit/537.36 (KHTML, like Gecko) "
                        "Chrome/91.0.4472.124 Safari/537.36")
     }
     jobs = scrape_jobs_with_descriptions(keywords, location, f_WT, pages_to_scrape, headers)
-    # Extract skills for each job
-    for job in jobs:
-        job["extracted_skills"] = extract_skills(job["description"])
+
+    # Use the batching function to extract skills in batches.
+    extracted_skills = batch_extract_skills(jobs, batch_size)
+
+    # Attach the extracted skills back to the jobs.
+    for job, skills in zip(jobs, extracted_skills):
+        job["extracted_skills"] = skills
 
     # Aggregate skills across all jobs
     hard_skills_counter = Counter()
