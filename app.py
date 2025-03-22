@@ -5,7 +5,10 @@ import plotly.express as px
 from collections import Counter
 
 # Import shared functions from backend.py
-from backend import scrape_jobs_with_descriptions, extract_skills, batch_extract_skills
+from backend import (
+    scrape_jobs_with_descriptions,
+    batch_extract_skills
+)
 
 def run_pipeline(keywords: str, location: str, f_WT: str, pages_to_scrape: int, batch_size: int):
     headers = {
@@ -13,16 +16,23 @@ def run_pipeline(keywords: str, location: str, f_WT: str, pages_to_scrape: int, 
                        "AppleWebKit/537.36 (KHTML, like Gecko) "
                        "Chrome/91.0.4472.124 Safari/537.36")
     }
+
+    # Scrape job postings
     jobs = scrape_jobs_with_descriptions(keywords, location, f_WT, pages_to_scrape, headers)
 
-    # Use the batching function to extract skills in batches.
+    if not jobs:
+        st.error("No jobs found. Try different parameters.")
+        return None, None
+
+    # Batch extract skills from the scraped jobs
     extracted_skills = batch_extract_skills(jobs, batch_size)
 
-    # Attach the extracted skills back to the jobs.
+    # Attach the extracted skills back to each job
+    # (Assuming the batch_extract_skills returns a list with the same order and length as jobs)
     for job, skills in zip(jobs, extracted_skills):
         job["extracted_skills"] = skills
 
-    # Aggregate skills across all jobs
+    # Aggregate the skills across all jobs
     hard_skills_counter = Counter()
     soft_skills_counter = Counter()
     for job in jobs:
@@ -35,6 +45,7 @@ def run_pipeline(keywords: str, location: str, f_WT: str, pages_to_scrape: int, 
     df_hard_sorted = df_hard.sort_values("Frequency", ascending=False)
     df_soft_sorted = df_soft.sort_values("Frequency", ascending=False)
 
+    # Create Plotly figures
     fig_hard = px.bar(
         df_hard_sorted,
         x="Skill",
@@ -62,15 +73,21 @@ def run_pipeline(keywords: str, location: str, f_WT: str, pages_to_scrape: int, 
 def main():
     st.title("Job Helper")
     st.write("Enter parameters to run the pipeline:")
+
     keywords = st.text_input("Title, skill, or company", "software engineer")
     location = st.text_input("Location", "New York, USA")
     f_WT = st.text_input("Work Type (f_WT)", "2")
     pages_to_scrape = st.number_input("Pages to Scrape", value=1, min_value=1)
+
+    # Add an input for batch size
+    batch_size = st.number_input("Batch Size (number of job descriptions per API request)", value=5, min_value=1)
+
     if st.button("Run Pipeline"):
         with st.spinner("Running pipeline, please wait..."):
-            fig_hard, fig_soft = run_pipeline(keywords, location, f_WT, pages_to_scrape)
-        st.plotly_chart(fig_hard)
-        st.plotly_chart(fig_soft)
+            fig_hard, fig_soft = run_pipeline(keywords, location, f_WT, pages_to_scrape, batch_size)
+        if fig_hard and fig_soft:
+            st.plotly_chart(fig_hard)
+            st.plotly_chart(fig_soft)
 
 if __name__ == "__main__":
     main()
