@@ -8,6 +8,8 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 import json
 from google import genai
+import pandas as pd
+import plotly.express as px
 from collections import Counter
 
 # Ensure necessary NLTK resources are downloaded
@@ -98,6 +100,7 @@ def extract_skills(job_description: str) -> dict:
         skills = {"hard_skills": [], "soft_skills": []}
     return skills
 
+# --- Batching Functions (all logic resides here) ---
 
 def batch_jobs(jobs, batch_size):
     """Yield successive batches from the jobs list."""
@@ -110,7 +113,6 @@ def batch_extract_skills(jobs, batch_size):
     Returns a list of extracted skills corresponding to each job in the batches.
     """
     extracted_skills = []
-
     for batch in batch_jobs(jobs, batch_size):
         # Combine job descriptions with a clear delimiter.
         descriptions = "\n---\n".join(job['description'] for job in batch)
@@ -125,11 +127,9 @@ def batch_extract_skills(jobs, batch_size):
         )
         response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         cleaned = clean_json_output(response.text)
-
         try:
             # Expecting a JSON array with one element per job description in the batch.
             batch_parsed = json.loads(cleaned)
-            # Optional: check that the parsed array length matches the batch.
             if not isinstance(batch_parsed, list) or len(batch_parsed) != len(batch):
                 print("Warning: Parsed output count does not match number of job descriptions in the batch.")
             # Normalize skills to lowercase for consistency.
@@ -141,5 +141,76 @@ def batch_extract_skills(jobs, batch_size):
             extracted_skills.extend(batch_parsed)
         except Exception as e:
             print("Error parsing batched JSON:", e)
-
     return extracted_skills
+
+def compute_batch_size(jobs, pages_to_scrape):
+    """
+    Compute batch size based on the notebook logic:
+      - jobs_per_page = len(jobs) // pages_to_scrape
+      - batch_size = jobs_per_page * 2  (two pages per batch)
+    """
+    if pages_to_scrape <= 0:
+        return len(jobs)
+    jobs_per_page = len(jobs) // pages_to_scrape
+    if jobs_per_page <= 0:
+        return len(jobs)
+    return jobs_per_page * 2
+
+def run_pipeline(keywords: str, location: str, f_WT: str, pages_to_scrape: int):
+    headers = {
+        "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) "
+                       "Chrome/91.0.4472.124 Safari/537.36")
+    }
+    # Scrape job postings
+    jobs = scrape_jobs_with_descriptions(keywords, location, f_WT, pages_to_scrape, headers)
+    if not jobs:
+        return None, None
+
+    # Compute batch size based on scraped jobs and pages to scrape
+    batch_size = compute_batch_size(jobs, pages_to_scrape)
+
+    # Batch extract skills using the computed batch size
+    extracted_skills = batch_extract_skills(jobs, batch_size)
+
+    # Attach the extracted skills back to each job (assuming order is preserved)
+    for job, skills in zip(jobs, extracted_skills):
+        job["extracted_skills"] = skills
+
+    # Aggregate the skills across all jobs.
+    hard_skills_counter = Counter()
+    soft_skills_counter = Counter()
+    for job in jobs:
+        skills = job.get("extracted_skills", {})
+        hard_skills_counter.update(skills.get("hard_skills", []))
+        soft_skills_counter.update(skills.get("soft_skills", []))
+
+    df_hard = pd.DataFrame(hard_skills_counter.items(), columns=["Skill", "Frequency"])
+    df_soft = pd.DataFrame(soft_skills_counter.items(), columns=["Skill", "Frequency"])
+    df_hard_sorted = df_hard.sort_values("Frequency", ascending=False)
+    df_soft_sorted = df_soft.sort_values("Frequency", ascending=False)
+
+    # Create Plotly figures.
+    fig_hard = px.bar(
+        df_hard_sorted,
+        x="Skill",
+        y="Frequency",
+        title="Top Hard Skills",
+        labels={"Skill": "Hard Skill", "Frequency": "Count"},
+        color="Frequency",
+        color_continuous_scale="Blues"
+    )
+    fig_hard.update_layout(xaxis_tickangle=-45)
+
+    fig_soft = px.bar(
+        df_soft_sorted,
+        x="Skill",
+        y="Frequency",
+        title="Top Soft Skills",
+        labels={"Skill": "Soft Skill", "Frequency": "Count"},
+        color="Frequency",
+        color_continuous_scale="Blues"
+    )
+    fig_soft.update_layout(xaxis_tickangle=-45)
+
+    return fig_hard, fig_soft
