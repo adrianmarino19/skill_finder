@@ -185,32 +185,49 @@ def run_pipeline(keywords: str, location: str, f_WT: str, pages_to_scrape: int):
         hard_skills_counter.update(skills.get("hard_skills", []))
         soft_skills_counter.update(skills.get("soft_skills", []))
 
+    import pandas as pd
+    import plotly.express as px
+
     df_hard = pd.DataFrame(hard_skills_counter.items(), columns=["Skill", "Frequency"])
     df_soft = pd.DataFrame(soft_skills_counter.items(), columns=["Skill", "Frequency"])
-    df_hard_sorted = df_hard.sort_values("Frequency", ascending=False)
-    df_soft_sorted = df_soft.sort_values("Frequency", ascending=False)
 
-    # Create Plotly figures.
+    # Limit to top 15 skills
+    df_hard_sorted = df_hard.sort_values("Frequency", ascending=False).head(15)
+    df_soft_sorted = df_soft.sort_values("Frequency", ascending=False).head(15)
+
+    # Compute percentage values for each skill in the subset
+    total_hard = df_hard_sorted["Frequency"].sum()
+    total_soft = df_soft_sorted["Frequency"].sum()
+    df_hard_sorted["Percentage"] = df_hard_sorted["Frequency"] / total_hard * 100
+    df_soft_sorted["Percentage"] = df_soft_sorted["Frequency"] / total_soft * 100
+
+    # Create horizontal bar graphs with percentages displayed at the end of each bar.
     fig_hard = px.bar(
         df_hard_sorted,
-        x="Skill",
-        y="Frequency",
+        x="Frequency",
+        y="Skill",
+        orientation='h',
         title="Top Hard Skills",
         labels={"Skill": "Hard Skill", "Frequency": "Count"},
         color="Frequency",
-        color_continuous_scale="Blues"
+        color_continuous_scale="Blues",
+        text=df_hard_sorted["Percentage"].apply(lambda x: f"{x:.1f}%")
     )
-    fig_hard.update_layout(xaxis_tickangle=-45)
+    fig_hard.update_traces(textposition='outside')
+    fig_hard.update_layout(yaxis={'categoryorder':'total ascending'})
 
     fig_soft = px.bar(
         df_soft_sorted,
-        x="Skill",
-        y="Frequency",
+        x="Frequency",
+        y="Skill",
+        orientation='h',
         title="Top Soft Skills",
         labels={"Skill": "Soft Skill", "Frequency": "Count"},
         color="Frequency",
-        color_continuous_scale="Blues"
+        color_continuous_scale="Blues",
+        text=df_soft_sorted["Percentage"].apply(lambda x: f"{x:.1f}%")
     )
-    fig_soft.update_layout(xaxis_tickangle=-45)
+    fig_soft.update_traces(textposition='outside')
+    fig_soft.update_layout(yaxis={'categoryorder':'total ascending'})
 
     return fig_hard, fig_soft
