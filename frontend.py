@@ -17,7 +17,7 @@ def main():
     st.title("Job Helper")
     st.write("Enter parameters to run the pipeline:")
 
-    # Row 1: Keyword, Location, Experience Level (multiselect)
+    # Row 1: Job title, Location, Experience Level (multiselect)
     col1, col2, col3 = st.columns(3)
     keywords = col1.text_input("Job title, skill, or company", "software engineer")
     location = col2.text_input("Location", "New York, USA")
@@ -26,12 +26,12 @@ def main():
 
     # Row 2: Remote Options (multiselect) and Pages to Scrape
     col4, col5, col6 = st.columns(3)
-    remote_options = ["Onsite", "Remote", "Hybrid"]
+    remote_options = ["On-site", "Remote", "Hybrid"]
     remote = col4.multiselect("Remote Options", options=remote_options)
     pages_to_scrape = col5.number_input("Pages to Scrape", value=1, min_value=1)
-    col6.empty()  # empty for spacing
+    col6.empty()  # Empty for spacing
 
-    # Row 3: Advanced Filters (order: Sort By, Date Posted, Easy Apply, Benefits)
+    # Row 3: Advanced Filters (Sort By, Date Posted, Easy Apply, Benefits)
     expand_filters = st.expander("Advanced Filters")
     with expand_filters:
         sortby_options = ["Relevance", "Date Posted"]
