@@ -21,6 +21,32 @@ load_dotenv()
 GEM_KEY = os.environ.get("GEM_KEY")
 client = genai.Client(api_key=GEM_KEY)
 
+# --- Mapping dictionaries for filters ---
+remote_mapping = {"Onsite": "1", "Remote": "2", "Hybrid": "3"}
+experience_mapping = {
+    "Internship": "1",
+    "Entry level": "2",
+    "Associate": "3",
+    "Mid-Senior level": "4",
+    "Director": "5",
+    "Executive": "6"
+}
+benefits_mapping = {
+    "Medical insurance": "1",
+    "Vision insurance": "2",
+    "Dental insurance": "3",
+    "401k": "4",
+    "Pension plan": "5",
+    "Paid maternity leave": "6",
+    "Paid paternity leave": "7",
+    "Commuter benefits": "8",
+    "Student loan assistance": "9",
+    "Tuition assistance": "10",
+    "Disability insurance": "11"
+}
+sortby_mapping = {"Relevance": "r", "Date Posted": "DD"}
+date_posted_mapping = {"Past 24 hours": "r86400", "Past week": "r604800", "Past month": "r2592000"}
+
 def remove_stopwords(text: str) -> str:
     tokens = word_tokenize(text)
     stop_words = set(stopwords.words('english'))
@@ -40,13 +66,49 @@ def fetch_job_description(job_url: str, headers: dict) -> str:
     except Exception as e:
         return f"Error fetching job description: {e}"
 
-def scrape_jobs_with_descriptions(keywords: str, location: str, f_WT: str, pages_to_scrape: int, headers: dict):
+def scrape_jobs_with_descriptions(keywords: str, location: str, pages_to_scrape: int, headers: dict,
+                                  experience_level=[], remote=[], date_posted="", benefits=[],
+                                  easy_apply=False, sortby=""):
     keywords_encoded = quote(keywords)
     location_encoded = quote(location)
+
+    # Build base URL with mandatory parameters.
+    base_url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={keywords_encoded}&location={location_encoded}"
+
+    # Append remote filter if provided.
+    if remote:
+        rem_values = ",".join([remote_mapping.get(r, "") for r in remote])
+        base_url += f"&f_Rem={rem_values}"
+
+    # Append experience level filter if provided.
+    if experience_level:
+        exp_values = ",".join([experience_mapping.get(e, "") for e in experience_level])
+        base_url += f"&f_E={exp_values}"
+
+    # Append benefits filter if provided.
+    if benefits:
+        ben_values = ",".join([benefits_mapping.get(b, "") for b in benefits])
+        base_url += f"&f_BEN={ben_values}"
+
+    # Append date posted filter if provided.
+    if date_posted:
+        dp_value = date_posted_mapping.get(date_posted, "")
+        if dp_value:
+            base_url += f"&f_TPR={dp_value}"
+
+    # Append sort by filter if provided.
+    if sortby:
+        sb_value = sortby_mapping.get(sortby, "")
+        if sb_value:
+            base_url += f"&sortBy={sb_value}"
+
+    # Append easy apply filter if true.
+    if easy_apply:
+        base_url += "&f_EA=true"
+
     jobs = []
     for page in range(pages_to_scrape):
-        url = (f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/"
-               f"search?keywords={keywords_encoded}&location={location_encoded}&f_WT={f_WT}&start={25 * page}")
+        url = base_url + f"&start={25 * page}"
         print(f"Scraping job list page: {url}")
         response = requests.get(url, headers=headers)
         if response.status_code != 200:
@@ -114,7 +176,6 @@ def batch_extract_skills(jobs, batch_size):
     """
     extracted_skills = []
     for batch in batch_jobs(jobs, batch_size):
-        # Combine job descriptions with a clear delimiter.
         descriptions = "\n---\n".join(job['description'] for job in batch)
         prompt = (
             "Below are several job descriptions separated by '---'. "
@@ -128,11 +189,9 @@ def batch_extract_skills(jobs, batch_size):
         response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         cleaned = clean_json_output(response.text)
         try:
-            # Expecting a JSON array with one element per job description in the batch.
             batch_parsed = json.loads(cleaned)
             if not isinstance(batch_parsed, list) or len(batch_parsed) != len(batch):
                 print("Warning: Parsed output count does not match number of job descriptions in the batch.")
-            # Normalize skills to lowercase for consistency.
             for job_skills in batch_parsed:
                 if "hard_skills" in job_skills:
                     job_skills["hard_skills"] = [skill.lower() for skill in job_skills["hard_skills"]]
@@ -156,28 +215,30 @@ def compute_batch_size(jobs, pages_to_scrape):
         return len(jobs)
     return jobs_per_page * 2
 
-def run_pipeline(keywords: str, location: str, f_WT: str, pages_to_scrape: int):
+def run_pipeline(keywords: str, location: str, pages_to_scrape: int,
+                 experience_level=[], remote=[], sortby="", date_posted="",
+                 easy_apply=False, benefits=[]):
+    # Ensure that if "Any time" is selected, no date filter is applied.
+    if date_posted == "Any time":
+        date_posted = ""
+
     headers = {
         "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                        "AppleWebKit/537.36 (KHTML, like Gecko) "
                        "Chrome/91.0.4472.124 Safari/537.36")
     }
-    # Scrape job postings
-    jobs = scrape_jobs_with_descriptions(keywords, location, f_WT, pages_to_scrape, headers)
+    jobs = scrape_jobs_with_descriptions(keywords, location, pages_to_scrape, headers,
+                                         experience_level, remote, date_posted, benefits,
+                                         easy_apply, sortby)
     if not jobs:
         return None, None
 
-    # Compute batch size based on scraped jobs and pages to scrape
     batch_size = compute_batch_size(jobs, pages_to_scrape)
-
-    # Batch extract skills using the computed batch size
     extracted_skills = batch_extract_skills(jobs, batch_size)
 
-    # Attach the extracted skills back to each job (assuming order is preserved)
     for job, skills in zip(jobs, extracted_skills):
         job["extracted_skills"] = skills
 
-    # Aggregate the skills across all jobs.
     hard_skills_counter = Counter()
     soft_skills_counter = Counter()
     for job in jobs:
@@ -185,30 +246,24 @@ def run_pipeline(keywords: str, location: str, f_WT: str, pages_to_scrape: int):
         hard_skills_counter.update(skills.get("hard_skills", []))
         soft_skills_counter.update(skills.get("soft_skills", []))
 
-    import pandas as pd
-    import plotly.express as px
-
     df_hard = pd.DataFrame(hard_skills_counter.items(), columns=["Skill", "Frequency"])
     df_soft = pd.DataFrame(soft_skills_counter.items(), columns=["Skill", "Frequency"])
 
-    # Limit to top 15 skills
     df_hard_sorted = df_hard.sort_values("Frequency", ascending=False).head(15)
     df_soft_sorted = df_soft.sort_values("Frequency", ascending=False).head(15)
 
-    # Compute percentage values for each skill in the subset
     total_hard = df_hard_sorted["Frequency"].sum()
     total_soft = df_soft_sorted["Frequency"].sum()
     df_hard_sorted["Percentage"] = df_hard_sorted["Frequency"] / total_hard * 100
     df_soft_sorted["Percentage"] = df_soft_sorted["Frequency"] / total_soft * 100
 
-    # Create horizontal bar graphs with percentages displayed at the end of each bar.
     fig_hard = px.bar(
         df_hard_sorted,
         x="Frequency",
         y="Skill",
         orientation='h',
-        title="Top Hard Skills",
-        labels={"Skill": "Hard Skill", "Frequency": "Count"},
+        title="Top 15 Hard Skills",
+        labels={"Skill": "Hard Skills", "Frequency": "Count"},
         color="Frequency",
         color_continuous_scale="Blues",
         text=df_hard_sorted["Percentage"].apply(lambda x: f"{x:.1f}%")
@@ -221,8 +276,8 @@ def run_pipeline(keywords: str, location: str, f_WT: str, pages_to_scrape: int):
         x="Frequency",
         y="Skill",
         orientation='h',
-        title="Top Soft Skills",
-        labels={"Skill": "Soft Skill", "Frequency": "Count"},
+        title="Top 15 Soft Skills",
+        labels={"Skill": "Soft Skills", "Frequency": "Count"},
         color="Frequency",
         color_continuous_scale="Blues",
         text=df_soft_sorted["Percentage"].apply(lambda x: f"{x:.1f}%")
