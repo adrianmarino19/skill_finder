@@ -12,7 +12,8 @@ import pandas as pd
 import plotly.express as px
 from collections import Counter
 import sqlite3
-import re  # For stripping out code fences
+import re
+import pandas as pd
 
 # Ensure necessary NLTK resources are downloaded
 nltk.download('punkt')
@@ -332,13 +333,31 @@ def run_pipeline(keywords: str, location: str, pages_to_scrape: int,
     return fig_hard, fig_soft
 
 # ---------------------------------------------------------------------------
-#   NEW: SQL-DRIVEN QUESTION ANSWERING
-#   1) LLM generates a strict SQL query.
+#   NEW: SQL-DRIVEN QUESTION ANSWERING WITH CONVERSATION CONTEXT
+#   1) LLM generates a strict SQL query based on the current question and conversation history.
 #   2) We execute the SQL query.
 #   3) We ask the LLM to summarize the results in natural language.
 # ---------------------------------------------------------------------------
-def answer_user_question(question: str):
-    # Define the database schema for context.
+import re
+import pandas as pd
+
+def answer_user_question(question: str, conversation_history=None):
+    """
+    A unified approach to handle both normal conversation and database queries.
+    1) If the user question requires referencing the database, the LLM will return an SQL query.
+    2) If the user question is general, the LLM will return a direct conversational answer.
+    We detect which path to take by checking for 'SELECT' in the LLM's output.
+    """
+
+    # Prepare conversation context if available.
+    if conversation_history:
+        # Join only the last few messages to control prompt length and cost.
+        history_to_include = conversation_history[-6:]
+        chat_context = "\n".join([f"{msg['role']}: {msg['content']}" for msg in history_to_include])
+    else:
+        chat_context = ""
+
+    # Database schema
     schema = """
     The SQLite database has a table called 'jobs' with the following schema:
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -359,22 +378,34 @@ def answer_user_question(question: str):
     soft_skills_count INTEGER.
     """
 
-    # First prompt: Force the LLM to generate only an SQL query.
+    # SINGLE PROMPT: Let the LLM decide if it needs the database or not.
+    # If it does, produce ONLY the SQL query. If not, produce a normal conversation answer.
     prompt = f"""
-    You are an expert SQL query generator.
-    Given the following database schema:
+    You are JobHelper, an AI assistant.
+    You have access to a database with the following schema:
     {schema}
-    Write an SQL query that retrieves the answer to the following question:
-    "{question}"
-    ONLY output the SQL query. Do not include any explanations or additional text.
+
+    The user may ask about the data in the database or may ask a general question.
+    - If the question can only be answered by referencing the database, output ONLY the SQL query (no explanation, no code fences).
+    - If the question can be answered without referencing the database, respond in normal conversation style.
+
+    Conversation so far:
+    {chat_context}
+
+    The user's new question: "{question}"
+
+    Your response:
     """
+
+    # 1) Generate the initial answer or SQL from the LLM
     response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
     answer_raw = response.text.strip()
-    # Strip out any code fences or markdown.
+    # Strip out code fences or markdown
     answer_stripped = re.sub(r"```[a-zA-Z]*", "", answer_raw).replace("```", "").strip()
 
-    # Check if the output appears to be an SQL query (i.e., contains SELECT).
+    # 2) Check if we have an SQL query or a direct answer
     if "SELECT" in answer_stripped.upper():
+        # We interpret the entire text as an SQL query
         try:
             cur = conn.cursor()
             cur.execute(answer_stripped)
@@ -382,24 +413,107 @@ def answer_user_question(question: str):
             columns = [desc[0] for desc in cur.description]
             df = pd.DataFrame(rows, columns=columns)
 
-            # Second prompt: Ask the LLM to summarize the query results.
+            # 3) Summarize the result in a second prompt
             prompt2 = f"""
-            You are an expert data analyst.
-            The following JSON array represents the result of an SQL query executed on a database:
+            You are JobHelper, an expert data analyst.
+            The user asked: "{question}"
+            Here is the JSON array of the query result:
             {df.to_json(orient='records')}
-            Based on this data, provide a clear, concise, natural language answer to the user's question:
-            "{question}"
-            Do NOT include any SQL code in your response.
+
+            Provide a concise, natural-language answer. Do NOT include SQL code in your response.
+            Also remember the prior conversation context:
+            {chat_context}
             """
             response2 = client.models.generate_content(model="gemini-2.0-flash", contents=prompt2)
             final_answer = response2.text.strip()
 
+            # Fallback if the summarization is empty or still looks like SQL
             if not final_answer or "SELECT" in final_answer.upper():
-                final_answer = "I'm sorry, I could not generate a proper summary from the query result."
+                final_answer = "I'm sorry, I couldn't generate a proper summary from the query result."
             return final_answer, df
 
         except Exception as e:
             return f"Error executing SQL query: {e}", None
+
     else:
-        # If no valid SQL query is generated, ask the user to rephrase.
-        return "Could not generate a valid SQL query from your question. Please try rephrasing your question.", None
+        # If there's no SQL, assume it's a normal conversation answer
+        return answer_stripped, None
+
+
+# def answer_user_question(question: str, conversation_history=None):
+#     # Prepare conversation context if available.
+#     if conversation_history:
+#         # We'll join only the last few messages to control prompt length.
+#         history_to_include = conversation_history[-6:]  # adjust as needed
+#         chat_context = "\n".join([f"{msg['role']}: {msg['content']}" for msg in history_to_include])
+#     else:
+#         chat_context = ""
+
+#     # Define the database schema for context.
+#     schema = """
+#     The SQLite database has a table called 'jobs' with the following schema:
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     job_title TEXT,
+#     company TEXT,
+#     location TEXT,
+#     job_url TEXT,
+#     job_description TEXT,
+#     experience_level TEXT,
+#     remote TEXT,
+#     benefits TEXT,
+#     easy_apply INTEGER,
+#     date_posted TEXT,
+#     sortby TEXT,
+#     extracted_hard_skills TEXT,
+#     extracted_soft_skills TEXT,
+#     hard_skills_count INTEGER,
+#     soft_skills_count INTEGER.
+#     """
+
+#     # First prompt: Force the LLM to generate only an SQL query.
+#     prompt = f"""
+#     You are an expert SQL query generator.
+#     The following is the conversation history between the user and assistant:
+#     {chat_context}
+
+#     Given the following database schema:
+#     {schema}
+#     Write an SQL query that retrieves the answer to the following question:
+#     "{question}"
+#     ONLY output the SQL query. Do not include any explanations or additional text.
+#     """
+#     response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
+#     answer_raw = response.text.strip()
+#     # Strip out any code fences or markdown.
+#     answer_stripped = re.sub(r"```[a-zA-Z]*", "", answer_raw).replace("```", "").strip()
+
+#     # Check if the output appears to be an SQL query (i.e., contains SELECT).
+#     if "SELECT" in answer_stripped.upper():
+#         try:
+#             cur = conn.cursor()
+#             cur.execute(answer_stripped)
+#             rows = cur.fetchall()
+#             columns = [desc[0] for desc in cur.description]
+#             df = pd.DataFrame(rows, columns=columns)
+
+#             # Second prompt: Ask the LLM to summarize the query results.
+#             prompt2 = f"""
+#             You are an expert data analyst.
+#             The following JSON array represents the result of an SQL query executed on a database:
+#             {df.to_json(orient='records')}
+#             Based on this data and the conversation so far, provide a clear, concise, natural language answer to the user's question:
+#             "{question}"
+#             Do NOT include any SQL code in your response.
+#             """
+#             response2 = client.models.generate_content(model="gemini-2.0-flash", contents=prompt2)
+#             final_answer = response2.text.strip()
+
+#             if not final_answer or "SELECT" in final_answer.upper():
+#                 final_answer = "I'm sorry, I could not generate a proper summary from the query result."
+#             return final_answer, df
+
+#         except Exception as e:
+#             return f"Error executing SQL query: {e}", None
+#     else:
+#         # If no valid SQL query is generated, ask the user to rephrase.
+#         return "Could not generate a valid SQL query from your question. Please try rephrasing your question.", None
