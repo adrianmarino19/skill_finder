@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_chat import message
 from backend import run_pipeline, answer_user_question
 
 # Set page configuration.
@@ -58,16 +59,23 @@ if st.session_state.get("pipeline_ran"):
 
 st.markdown("---")
 
-# ---- Simplified Integrated Chat Section ----
+# ---- Integrated Chat Section ----
 with st.expander("Interactive Chat with JobHelper", expanded=True):
     # Display the conversation history.
     for msg in st.session_state.conversation_history[-20:]:
         st.chat_message(msg["role"]).write(msg["content"])
 
-    # Message input at the bottom.
-    user_msg = st.text_input("", key="chat_input", placeholder="Type your message here...")
-    if st.button("Send", key="send_btn") and user_msg:
-        st.session_state.conversation_history.append({"role": "user", "content": user_msg})
-        with st.spinner("Processing..."):
-            answer, _ = answer_user_question(user_msg)
-        st.session_state.conversation_history.append({"role": "assistant", "content": answer})
+    # Define a callback to process the chat input when submitted.
+    def process_chat():
+        user_msg = st.session_state.get("chat_input")
+        if user_msg:
+            st.session_state.conversation_history.append({"role": "user", "content": user_msg})
+            with st.spinner("Processing..."):
+                answer, _ = answer_user_question(user_msg, conversation_history=st.session_state.conversation_history)
+            st.session_state.conversation_history.append({"role": "assistant", "content": answer})
+            # Remove the 'chat_input' key to clear the widget.
+            if "chat_input" in st.session_state:
+                del st.session_state["chat_input"]
+
+    # Use st.chat_input with an on_submit callback.
+    st.chat_input("Type your message here...", key="chat_input", on_submit=process_chat)
