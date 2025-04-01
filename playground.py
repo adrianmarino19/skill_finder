@@ -3,53 +3,51 @@ from streamlit_chat import message
 from backend import run_pipeline, answer_user_question
 
 # -------------------
-# Midnight Scout Theme
+# 1) FOREST SCOUT THEME
 # -------------------
 st.set_page_config(
     page_title="Job Helper",
-    page_icon="🎒",  # Boy scout-inspired icon
+    page_icon="🌲",
     layout="wide",
 )
 
-# Inject CSS for a black background with dark brown and light brown accents.
+# Inject CSS for theming.
+# Adjust selectors or add additional styling rules as needed.
 st.markdown(
     """
     <style>
     :root {
-        --primary-color: #4E342E;           /* Dark brown for buttons */
-        --background-color: #000000;        /* Black background */
-        --secondary-background-color: #333333; /* Dark gray for header/containers */
-        --text-color: #BDB76B;              /* Light brown text for contrast */
+        --primary-color: #2F4F4F;            /* Deep forest green */
+        --background-color: #F5F5DC;         /* Beige/tan */
+        --secondary-background-color: #E0DAB8; /* Slightly darker tan */
+        --text-color: #333333;               /* Dark gray text */
     }
 
+    /* Main app background and text */
     div[data-testid="stAppViewContainer"] {
         background-color: var(--background-color);
         color: var(--text-color);
     }
 
+    /* Header or top area */
     div[data-testid="stHeader"] {
         background-color: var(--secondary-background-color);
     }
 
+    /* Buttons */
     .stButton>button {
         background-color: var(--primary-color) !important;
-        color: var(--text-color) !important;
+        color: #FFFFFF !important;
         border: none;
     }
     .stButton>button:hover {
-        filter: brightness(1.15);
+        filter: brightness(1.1);
     }
 
+    /* Text inputs, multiselects, etc. */
     input, .stTextInput input, .stMultiSelect>div>div>div {
-        background-color: #222222 !important;
+        background-color: #FFFFFF !important;
         color: var(--text-color) !important;
-        border: 1px solid #555555;
-    }
-
-    /* Override focus/hover outlines for textboxes */
-    input:focus, .stTextInput input:focus, .stMultiSelect>div>div>div:focus {
-        border-color: var(--primary-color) !important;
-        box-shadow: 0 0 0 1px var(--primary-color) !important;
     }
     </style>
     """,
@@ -66,6 +64,7 @@ if "conversation_history" not in st.session_state:
 if "pipeline_ran" not in st.session_state:
     st.session_state.pipeline_ran = False
 
+# ---- Job Search Interface ----
 st.title("Job Helper")
 st.write("Enter parameters to run the pipeline:")
 
@@ -111,13 +110,11 @@ if st.session_state.get("pipeline_ran"):
 
 st.markdown("---")
 
+# ---- Integrated Chat Section ----
 with st.expander("Interactive Chat with JobHelper", expanded=True):
-    # Display chat messages with an assistant avatar icon.
+
     for msg in st.session_state.conversation_history[-20:]:
-        if msg["role"] == "assistant":
-            st.chat_message("assistant", avatar="🎒").write(msg["content"])
-        else:
-            st.chat_message("user").write(msg["content"])
+        st.chat_message(msg["role"]).write(msg["content"])
 
     def process_chat():
         user_msg = st.session_state.get("chat_input")
