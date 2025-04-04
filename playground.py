@@ -2,52 +2,20 @@ import streamlit as st
 from streamlit_chat import message
 from backend import run_pipeline, answer_user_question
 
-# -------------------
-# 1) FOREST SCOUT THEME
-# -------------------
+# Set up page configuration
 st.set_page_config(
-    page_title="Job Helper",
-    page_icon="🌲",
+    page_title="SkillFinder",
+    page_icon="🔭",
     layout="wide",
 )
 
-# Inject CSS for theming.
-# Adjust selectors or add additional styling rules as needed.
+# Inject CSS to enlarge the chat avatar
 st.markdown(
     """
     <style>
-    :root {
-        --primary-color: #2F4F4F;            /* Deep forest green */
-        --background-color: #F5F5DC;         /* Beige/tan */
-        --secondary-background-color: #E0DAB8; /* Slightly darker tan */
-        --text-color: #333333;               /* Dark gray text */
-    }
-
-    /* Main app background and text */
-    div[data-testid="stAppViewContainer"] {
-        background-color: var(--background-color);
-        color: var(--text-color);
-    }
-
-    /* Header or top area */
-    div[data-testid="stHeader"] {
-        background-color: var(--secondary-background-color);
-    }
-
-    /* Buttons */
-    .stButton>button {
-        background-color: var(--primary-color) !important;
-        color: #FFFFFF !important;
-        border: none;
-    }
-    .stButton>button:hover {
-        filter: brightness(1.1);
-    }
-
-    /* Text inputs, multiselects, etc. */
-    input, .stTextInput input, .stMultiSelect>div>div>div {
-        background-color: #FFFFFF !important;
-        color: var(--text-color) !important;
+    img[data-testid="stChatMessageAvatar"] {
+        width: 1000px !important;
+        height: 1000px !important;
     }
     </style>
     """,
@@ -59,13 +27,13 @@ st.markdown(
 # -------------------
 if "conversation_history" not in st.session_state:
     st.session_state.conversation_history = [
-        {"role": "assistant", "content": "Hello! I am JobHelper. How can I assist you?"}
+        {"role": "assistant", "content": "Hello! I am SkillFinder. How can I help you?"}
     ]
 if "pipeline_ran" not in st.session_state:
     st.session_state.pipeline_ran = False
 
 # ---- Job Search Interface ----
-st.title("Job Helper")
+st.title("SkillFinder🔭")
 st.write("Enter parameters to run the pipeline:")
 
 col1, col2, col3 = st.columns(3)
@@ -111,10 +79,17 @@ if st.session_state.get("pipeline_ran"):
 st.markdown("---")
 
 # ---- Integrated Chat Section ----
-with st.expander("Interactive Chat with JobHelper", expanded=True):
-
+with st.expander("Interactive Chat with SkillFinder🔭", expanded=True):
+    # Show last 20 messages
     for msg in st.session_state.conversation_history[-20:]:
-        st.chat_message(msg["role"]).write(msg["content"])
+        if msg["role"] == "assistant":
+            # Use your telescope icon file here (ensure the path is correct!)
+            st.chat_message("assistant", avatar="img/thisdaone2.png").write(msg["content"])
+        else:
+            st.chat_message("user").write(msg["content"])
+
+    # Extra space before the input
+    st.markdown("<br><br>", unsafe_allow_html=True)
 
     def process_chat():
         user_msg = st.session_state.get("chat_input")
