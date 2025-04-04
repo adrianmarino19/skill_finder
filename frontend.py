@@ -1,5 +1,6 @@
 import streamlit as st
 import base64
+import math
 from streamlit_chat import message
 from backend import run_pipeline, answer_user_question
 
@@ -47,7 +48,7 @@ st.sidebar.markdown(
     ''',
     unsafe_allow_html=True
 )
-st.sidebar.title("About SkillFinder")
+st.sidebar.title("About")
 st.sidebar.markdown(
     """
 - **Discover In-Demand Skills:** Analyze job postings to identify top hard and soft skills.
@@ -59,7 +60,7 @@ st.sidebar.markdown(
 # --- MAIN APP ---
 if "conversation_history" not in st.session_state:
     st.session_state.conversation_history = [
-        {"role": "assistant", "content": "Hello! I am SkillFinder. How can I help you?"}
+        {"role": "assistant", "content": "Hello! I am SkillFinder. Ask me anything about your query!"}
     ]
 if "pipeline_ran" not in st.session_state:
     st.session_state.pipeline_ran = False
@@ -69,7 +70,7 @@ st.markdown("<br><br>", unsafe_allow_html=True)
 st.write("Enter parameters to run the pipeline:")
 
 col1, col2, col3 = st.columns(3)
-keywords = col1.text_input("Job title, skill, or company", "Data scientist")
+keywords = col1.text_input("Job title, skill, or company", "Data Scientist")
 location = col2.text_input("Location", "New York, USA")
 exp_options = ["Internship", "Entry level", "Associate", "Mid-Senior level", "Director", "Executive"]
 experience_level = col3.multiselect("Experience Level", options=exp_options)
@@ -77,8 +78,8 @@ experience_level = col3.multiselect("Experience Level", options=exp_options)
 col4, col5, col6 = st.columns(3)
 remote_options = ["Onsite", "Remote", "Hybrid"]
 remote = col4.multiselect("Remote Options", options=remote_options)
-# Changed label here:
-jobs_to_analyze = col5.number_input("Jobs to Analyze", value=1, min_value=1)
+# Now users select the number of jobs (in increments of 10)
+jobs_to_analyze = col5.number_input("Jobs to Analyze", value=10, min_value=10, step=10)
 col6.empty()
 
 with st.expander("Advanced Filters"):
@@ -97,9 +98,10 @@ with st.expander("Advanced Filters"):
 
 if st.button("Run Pipeline"):
     with st.spinner("Running pipeline..."):
-        # Pass jobs_to_analyze as the pages_to_scrape parameter.
+        # Each page contains 10 jobs. Calculate pages accordingly.
+        pages_to_scrape = math.ceil(jobs_to_analyze / 10)
         fig_hard, fig_soft = run_pipeline(
-            keywords, location, jobs_to_analyze,
+            keywords, location, pages_to_scrape,
             experience_level, remote, sortby, date_posted, easy_apply, benefits
         )
         st.session_state.fig_hard = fig_hard
@@ -115,7 +117,8 @@ st.markdown("---")
 with st.expander("Interactive Chat with SkillFinder🔭", expanded=True):
     for msg in st.session_state.conversation_history[-20:]:
         if msg["role"] == "assistant":
-            st.chat_message("assistant", avatar="img/icon.png").write(msg["content"])
+            # Change the avatar image to use "img/thisdaone2.png" for assistant messages.
+            st.chat_message("assistant", avatar="img/thisdaone2.png").write(msg["content"])
         else:
             st.chat_message("user").write(msg["content"])
 
