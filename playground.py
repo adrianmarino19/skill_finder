@@ -1,30 +1,66 @@
 import streamlit as st
+import base64
 from streamlit_chat import message
 from backend import run_pipeline, answer_user_question
 
-# Set up page configuration
+def img_to_base64(image_path):
+    """Convert an image file to a base64 string."""
+    with open(image_path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+# Page config
 st.set_page_config(
     page_title="SkillFinder",
     page_icon="🔭",
     layout="wide",
 )
 
-# Inject CSS to enlarge the chat avatar
+# CSS for a larger, curved rectangle icon with a glow effect.
 st.markdown(
     """
     <style>
-    img[data-testid="stChatMessageAvatar"] {
-        width: 1000px !important;
-        height: 1000px !important;
+    .cover-glow {
+        width: 90%;              /* Make it nearly full-width in the sidebar */
+        max-width: 300px;        /* Cap the width so it doesn't become too large on wide screens */
+        height: auto;            /* Keep aspect ratio */
+        border-radius: 15px;     /* Curved corners */
+        margin: 0 auto;          /* Center horizontally */
+        display: block;          /* So margin: 0 auto works */
+        box-shadow:
+            0 0 5px  #1E90FF,
+            0 0 10px #1E90FF,
+            0 0 15px #1E90FF,
+            0 0 20px #1E90FF;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# -------------------
-# App Logic
-# -------------------
+import streamlit as st
+
+
+
+# --- SIDEBAR ---
+img_base64 = img_to_base64("img/icon1.png")
+st.sidebar.markdown(
+    f'''
+    <div style="text-align: center; padding: 1rem 0;">
+        <img src="data:image/png;base64,{img_base64}" class="cover-glow" alt="SkillFinder Icon" />
+    </div>
+    ''',
+    unsafe_allow_html=True
+)
+st.sidebar.title("About SkillFinder")
+st.sidebar.markdown(
+    """
+- **Discover In-Demand Skills:** Analyze job postings to identify top hard and soft skills.
+- **Compare Job Requirements:** Understand trends across roles and industries.3
+- **Interactive Chat:** Ask questions and get instant insights.
+    """
+)
+
+# --- MAIN APP ---
 if "conversation_history" not in st.session_state:
     st.session_state.conversation_history = [
         {"role": "assistant", "content": "Hello! I am SkillFinder. How can I help you?"}
@@ -32,12 +68,14 @@ if "conversation_history" not in st.session_state:
 if "pipeline_ran" not in st.session_state:
     st.session_state.pipeline_ran = False
 
-# ---- Job Search Interface ----
 st.title("SkillFinder🔭")
+st.markdown("<br><br>", unsafe_allow_html=True)
 st.write("Enter parameters to run the pipeline:")
 
+
+
 col1, col2, col3 = st.columns(3)
-keywords = col1.text_input("Job title, skill, or company", "data scientist")
+keywords = col1.text_input("Job title, skill, or company", "Data scientist")
 location = col2.text_input("Location", "New York, USA")
 exp_options = ["Internship", "Entry level", "Associate", "Mid-Senior level", "Director", "Executive"]
 experience_level = col3.multiselect("Experience Level", options=exp_options)
@@ -78,18 +116,14 @@ if st.session_state.get("pipeline_ran"):
 
 st.markdown("---")
 
-# ---- Integrated Chat Section ----
 with st.expander("Interactive Chat with SkillFinder🔭", expanded=True):
-    # Show last 20 messages
     for msg in st.session_state.conversation_history[-20:]:
         if msg["role"] == "assistant":
-            # Use your telescope icon file here (ensure the path is correct!)
-            st.chat_message("assistant", avatar="img/thisdaone2.png").write(msg["content"])
+            st.chat_message("assistant", avatar="img/icon.png").write(msg["content"])
         else:
             st.chat_message("user").write(msg["content"])
 
-    # Extra space before the input
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    # st.markdown("<br><br>", unsafe_allow_html=True)
 
     def process_chat():
         user_msg = st.session_state.get("chat_input")

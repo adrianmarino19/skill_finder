@@ -1,5 +1,5 @@
 [theme]
-primaryColor="#47594C"            # Greenish color
-backgroundColor="#F5F0E1"         # Light khaki
-secondaryBackgroundColor="#EBE2CD" # Slightly darker khaki for container backgrounds
-textColor="#3B2F2F"               # Warm brown for text
+primaryColor = "#1E90FF"            # Blue for primary elements (e.g., buttons, hover)
+backgroundColor = "#000000"         # Black background
+secondaryBackgroundColor = "#333333"  # Dark gray for headers/containers
+textColor = "#FFFFFF"               # White text
