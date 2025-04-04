@@ -97,6 +97,7 @@ soupsieve==2.6
 stack-data==0.6.3
 starlette==0.46.1
 streamlit==1.43.2
+streamlit-chat==0.1.1
 streamlit_folium==0.24.0
 tenacity==9.0.0
 toml==0.10.2
