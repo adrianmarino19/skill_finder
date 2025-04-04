@@ -23,7 +23,7 @@ st.markdown(
         width: 90%;              /* Make it nearly full-width in the sidebar */
         max-width: 300px;        /* Cap the width so it doesn't become too large on wide screens */
         height: auto;            /* Keep aspect ratio */
-        border-radius: 15px;     /* Curved corners */
+        border-radius: 15px;     /* Curved corners for a curved square/rectangle */
         margin: 0 auto;          /* Center horizontally */
         display: block;          /* So margin: 0 auto works */
         box-shadow:
@@ -36,10 +36,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-import streamlit as st
-
-
 
 # --- SIDEBAR ---
 img_base64 = img_to_base64("img/icon1.png")
@@ -55,7 +51,7 @@ st.sidebar.title("About SkillFinder")
 st.sidebar.markdown(
     """
 - **Discover In-Demand Skills:** Analyze job postings to identify top hard and soft skills.
-- **Compare Job Requirements:** Understand trends across roles and industries.3
+- **Compare Job Requirements:** Understand trends across roles and industries.
 - **Interactive Chat:** Ask questions and get instant insights.
     """
 )
@@ -72,8 +68,6 @@ st.title("SkillFinder🔭")
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.write("Enter parameters to run the pipeline:")
 
-
-
 col1, col2, col3 = st.columns(3)
 keywords = col1.text_input("Job title, skill, or company", "Data scientist")
 location = col2.text_input("Location", "New York, USA")
@@ -83,7 +77,8 @@ experience_level = col3.multiselect("Experience Level", options=exp_options)
 col4, col5, col6 = st.columns(3)
 remote_options = ["Onsite", "Remote", "Hybrid"]
 remote = col4.multiselect("Remote Options", options=remote_options)
-pages_to_scrape = col5.number_input("Pages to Scrape", value=1, min_value=1)
+# Changed label here:
+jobs_to_analyze = col5.number_input("Jobs to Analyze", value=1, min_value=1)
 col6.empty()
 
 with st.expander("Advanced Filters"):
@@ -102,8 +97,9 @@ with st.expander("Advanced Filters"):
 
 if st.button("Run Pipeline"):
     with st.spinner("Running pipeline..."):
+        # Pass jobs_to_analyze as the pages_to_scrape parameter.
         fig_hard, fig_soft = run_pipeline(
-            keywords, location, pages_to_scrape,
+            keywords, location, jobs_to_analyze,
             experience_level, remote, sortby, date_posted, easy_apply, benefits
         )
         st.session_state.fig_hard = fig_hard
@@ -122,8 +118,6 @@ with st.expander("Interactive Chat with SkillFinder🔭", expanded=True):
             st.chat_message("assistant", avatar="img/icon.png").write(msg["content"])
         else:
             st.chat_message("user").write(msg["content"])
-
-    # st.markdown("<br><br>", unsafe_allow_html=True)
 
     def process_chat():
         user_msg = st.session_state.get("chat_input")
