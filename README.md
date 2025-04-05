@@ -22,8 +22,6 @@ SkillFinder is an interactive Streamlit application that helps you discover in-d
 - **Customizable Filters:**  
   - Advanced filtering options such as sort order, date posted, and benefits to refine job searches.
 
----
-
 ## Installation
 
 ### Prerequisites
