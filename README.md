@@ -8,8 +8,6 @@ SkillFinder is an interactive Streamlit application that helps you discover in-d
 - **Compare Job Requirements:** Visualize trends across different roles and industries.
 - **Interactive Chat:** Ask questions about the job market or specific postings and receive data-driven insights.
 
----
-
 ## Features
 
 - **Job Scraping Pipeline:**  
