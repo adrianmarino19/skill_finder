@@ -53,7 +53,7 @@ st.sidebar.markdown(
     """
 - **Discover In-Demand Skills:** Analyze job postings to identify top hard and soft skills.
 - **Compare Job Requirements:** Understand trends across roles and industries.
-- **Interactive Chat:** Ask questions and get instant insights to your queries!
+- **Interactive Chat:** Ask questions and get instant insights about your query!
     """
 )
 
