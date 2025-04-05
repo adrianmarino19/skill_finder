@@ -39,3 +39,19 @@ SkillFinder is an interactive Streamlit application that helps you discover in-d
    ```bash
    git clone https://github.com/adrianmarino19/skill_finder.git
    cd skill_finder
+
+2. **Create a Virtual Environment (Recommended)**
+
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+
+3. **Install Dependencies:**
+
+```bash
+pip install -r requirements.txt
+
+4. **Configure Environment Variables:**
+
+```bash
+GEM_KEY=your_genai_api_key_here
