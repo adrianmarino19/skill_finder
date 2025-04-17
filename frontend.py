@@ -51,7 +51,7 @@ st.sidebar.markdown(
 st.sidebar.title("About")
 st.sidebar.markdown(
     """
-- **Discover and visualize** the most in‑demand hard and soft skills by scraping live LinkedIn job postings based on custom filters.
+- **Discover and visualize** the most in‑demand hard and soft skills by scraping live LinkedIn job postings.
 - **Interactively chat with the data** by talking with SkillFinder!
     """
 
