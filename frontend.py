@@ -51,10 +51,13 @@ st.sidebar.markdown(
 st.sidebar.title("About")
 st.sidebar.markdown(
     """
-- **Discover In-Demand Skills:** Analyze job postings to identify top hard and soft skills.
-- **Compare Job Requirements:** Understand trends across roles and industries.
-- **Interactive Chat:** Ask questions and get instant insights about your query!
+- **Discover and visualize** the most in‑demand hard and soft skills by scraping live LinkedIn job postings based on custom filters.
+- **Interactively chat with the data** by talking with SkillFinder!
     """
+
+# - **Discover In-Demand Skills:** Analyze job postings to identify top hard and soft skills.
+# - **Compare Job Requirements:** Understand trends across roles and industries.
+# - **Interactive Chat:** Ask questions and get instant insights about your query!
 )
 
 # --- MAIN APP ---
