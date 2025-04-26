@@ -170,6 +170,14 @@ def scrape_jobs_with_descriptions(keywords: str, location: str, pages_to_scrape:
         url = base_url + f"&start={25 * page}"
         print(f"Scraping job list page: {url}")
         response = requests.get(url, headers=headers)
+
+        st.write(f"URL: {url}  → status {response.status_code}") ### DEBUG
+        if response.status_code == 200:
+        # show us the first 1 000 characters so we can see the structure
+            st.code(response.text[:1000])
+        else:
+            st.error(f"LinkedIn returned {response.status_code}")
+
         if response.status_code != 200:
             print(f"Failed to fetch page {page + 1}: {response.status_code}")
             continue
