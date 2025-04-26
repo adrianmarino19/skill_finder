@@ -15,10 +15,16 @@ import sqlite3
 import re
 import pandas as pd
 import streamlit as st
+import os, nltk
 
-# Ensure necessary NLTK resources are downloaded
-nltk.download('punkt')
-nltk.download('stopwords')
+
+
+nltk.data.path.append(os.path.join(os.getcwd(), "nltk_data"))
+
+
+# # Ensure necessary NLTK resources are downloaded
+# nltk.download('punkt')
+# nltk.download('stopwords')
 
 load_dotenv()
 # GEM_KEY = os.environ.get("GEM_KEY") LOCALLY!
