@@ -48,7 +48,7 @@ st.sidebar.markdown(
     ''',
     unsafe_allow_html=True
 )
-st.sidebar.title(f"About {st.secrets['GEM_KEY']}")
+st.sidebar.title(f"About")
 st.sidebar.markdown(
     """
 - **Discover and visualize** the most in‑demand hard and soft skills by scraping live LinkedIn job postings.
