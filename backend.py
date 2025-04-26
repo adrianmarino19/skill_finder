@@ -171,38 +171,73 @@ def scrape_jobs_with_descriptions(keywords: str, location: str, pages_to_scrape:
         print(f"Scraping job list page: {url}")
         response = requests.get(url, headers=headers)
 
-        st.write(f"URL: {url}  → status {response.status_code}") ### DEBUG
-        if response.status_code == 200:
-        # show us the first 1 000 characters so we can see the structure
-            st.code(response.text[:1000])
-        else:
-            st.error(f"LinkedIn returned {response.status_code}")
-
-        if response.status_code != 200:
-            print(f"Failed to fetch page {page + 1}: {response.status_code}")
-            continue
         soup = BeautifulSoup(response.content, "html.parser")
-        divs = soup.find_all("div", class_="base-card")
-        for div in divs:
-            try:
-                title = div.find("h3", class_="base-search-card__title").text.strip()
-                company = div.find("h4", class_="base-search-card__subtitle").text.strip()
-                loc = div.find("span", class_="job-search-card__location").text.strip()
-                job_link_tag = div.find("a", class_="base-card__full-link")
-                job_url = job_link_tag["href"] if job_link_tag else "No URL found"
-                job_description = (fetch_job_description(job_url, headers)
-                                   if job_url != "No URL found" else "No description available")
-                job_description = remove_stopwords(job_description)
-                jobs.append({
-                    "title": title,
-                    "company": company,
-                    "location": loc,
-                    "url": job_url,
-                    "description": job_description
-                })
-            except Exception as e:
-                print(f"Error parsing job: {e}")
+        cards = soup.find_all("div", class_="job-search-card")
+
+        jobs = []
+        for card in cards:
+            # — URL & Title
+            link = card.select_one("a.base-card__full-link")
+            job_url = link["href"] if link and link.has_attr("href") else None
+
+            title_tag = card.select_one("h3.base-search-card__title")
+            title = title_tag.get_text(strip=True) if title_tag else (
+                link.select_one("span.sr-only").get_text(strip=True)
+                if link and link.select_one("span.sr-only")
+                else "No title"
+            )
+
+            # — Company
+            company_tag = card.select_one("h4.base-search-card__subtitle a")
+            company = company_tag.get_text(strip=True) if company_tag else "No company"
+
+            # — Location
+            loc_tag = card.select_one("span.job-search-card__location")
+            location = loc_tag.get_text(strip=True) if loc_tag else "No location"
+
+            # — Posted Date (optional)
+            date_tag = card.select_one("time.job-search-card__listdate")
+            date_posted = date_tag["datetime"] if date_tag and date_tag.has_attr("datetime") else None
+
+            # — Fetch & clean description
+            description = ""
+            if job_url:
+                raw = fetch_job_description(job_url, headers)
+                description = remove_stopwords(raw)
+
+            jobs.append({
+                "title":       title,
+                "company":     company,
+                "location":    location,
+                "url":         job_url,
+                "date_posted": date_posted,
+                "description": description,
+            })
+
     return jobs
+
+    #     soup = BeautifulSoup(response.content, "html.parser")
+    #     divs = soup.find_all("div", class_="base-card")
+    #     for div in divs:
+    #         try:
+    #             title = div.find("h3", class_="base-search-card__title").text.strip()
+    #             company = div.find("h4", class_="base-search-card__subtitle").text.strip()
+    #             loc = div.find("span", class_="job-search-card__location").text.strip()
+    #             job_link_tag = div.find("a", class_="base-card__full-link")
+    #             job_url = job_link_tag["href"] if job_link_tag else "No URL found"
+    #             job_description = (fetch_job_description(job_url, headers)
+    #                                if job_url != "No URL found" else "No description available")
+    #             job_description = remove_stopwords(job_description)
+    #             jobs.append({
+    #                 "title": title,
+    #                 "company": company,
+    #                 "location": loc,
+    #                 "url": job_url,
+    #                 "description": job_description
+    #             })
+    #         except Exception as e:
+    #             print(f"Error parsing job: {e}")
+    # return jobs
 
 def clean_json_output(response_text: str) -> str:
     response_text = response_text.strip()
