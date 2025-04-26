@@ -27,8 +27,8 @@ With data visualizations and an interactive chat interface, SkillFinder empowers
 
 | Component          | Technology                               |
 |--------------------|------------------------------------------|
-| **Frontend**       | Streamlit, Plotly, Streamlit-chat        |
 | **Backend**        | Python, NLTK, Google Generative AI (Gemini 2.0) |
+| **Frontend**       | Streamlit, Plotly, Streamlit-chat        |
 | **Web Scraping**   | BeautifulSoup4, Requests                 |
 | **Database**       | SQLite (in-memory)                       |
 | **API**            | FastAPI, Pydantic                        |
