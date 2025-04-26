@@ -483,3 +483,38 @@ def answer_user_question(question: str, conversation_history=None):
     else:
         # If there's no SQL, assume it's a normal conversation answer
         return answer_stripped, None
+
+
+
+# At the very bottom of backend.py (or in test_scrape.py)
+
+if __name__ == "__main__":
+    from urllib.parse import quote
+    from backend import scrape_jobs_with_descriptions
+
+    # Use the same headers as in run_pipeline
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/91.0.4472.124 Safari/537.36"
+        )
+    }
+
+    # Parameters: keywords, location, pages, headers, <-- rest empty/default
+    jobs = scrape_jobs_with_descriptions(
+        keywords="Data Scientist",
+        location="New York, USA",
+        pages_to_scrape=1,
+        headers=headers,
+        experience_level=[],
+        remote=[],
+        date_posted="",
+        benefits=[],
+        easy_apply=False,
+        sortby=""
+    )
+
+    print(f"🔍 Scraped total jobs: {len(jobs)}")
+    for i, job in enumerate(jobs[:5], start=1):
+        print(f"{i}. {job['title']} @ {job['company']} — {job['location']}")
