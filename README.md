@@ -1,7 +1,5 @@
 # SkillFinder 🔭
 
-[![Demo](https://img.shields.io/badge/Demo-SkillFinder_Streamlit-blue)](https://skillfinder.streamlit.app/)
-
 SkillFinder is an interactive Streamlit application that helps you discover in-demand skills by analyzing job postings from LinkedIn. Check it out [here](https://skillfinder.streamlit.app/)! 
 
 With data visualizations and an interactive chat interface, SkillFinder empowers you to:
@@ -10,19 +8,58 @@ With data visualizations and an interactive chat interface, SkillFinder empowers
 - **Compare Job Requirements:** Visualize trends across different roles and industries.
 - **Interactive Chat:** Ask questions about the job market or specific postings and receive data-driven insights.
 
-## Features
+<br>
 
-- **Job Scraping Pipeline:**  
-  - Scrapes job postings based on user-defined keywords, location, experience level, remote options, and more.
-  - Fetches and cleans job descriptions using BeautifulSoup and custom stopword removal.
-- **Skills Extraction:**  
-  - Leverages a large language model (via `genai.Client`) to extract hard and soft skills from job descriptions.
-  - Displays interactive Plotly bar charts for the most frequent skills.
-- **Interactive Chat Interface:**  
-  - Chat with SkillFinder for further insights or to execute SQL queries on job data.
-  - Uses conversation history for context-aware responses.
-- **Customizable Filters:**  
-  - Advanced filtering options such as sort order, date posted, and benefits to refine job searches.
+## 🔀 Data Flow & Features
+
+1. User inputs job search filters/parameters (job title, location, remote, etc) in Streamlit UI.
+2. Backend scrapes LinkedIn job listings.
+3. Job descriptions are cleaned and processed.
+4. large language model (via Google's Gemini 2.0 Flash) to extract hard and soft skills from job descriptions.
+5. Skills are stored in SQLite database.
+6. Visualizations are generated and displayed.
+7. Chat interface enables natural language querying for the specific scraped data (using RAG and LLM).
+
+ 
+<br>
+
+## 🛠️ Tech Stack
+
+| Component          | Technology                               |
+|--------------------|------------------------------------------|
+| **Backend**        | Python, NLTK, Google Generative AI (Gemini 2.0) |
+| **Frontend**       | Streamlit, Plotly, Streamlit-chat        |
+| **Web Scraping**   | BeautifulSoup4, Requests                 |
+| **Database**       | SQLite (in-memory)                       |
+| **API**            | FastAPI, Pydantic                        |
+| **Data Processing**| Pandas, Collections (Counter)            |
+| **Environment**    | Python 3.7+               |
+
+<br>
+
+## 🛤️ Architecture
+
+- **Frontend (Streamlit):**  
+  `frontend.py` provides the user interface for inputting search parameters, displaying visualizations, and hosting the interactive chat.
+
+- **Backend Processing:**  
+  `backend.py` contains core logic for:
+  - Web scraping LinkedIn job listings
+  - NLP text cleaning using NLTK
+  - AI-powered skill extraction via Gemini 2.0 Flash
+  - Database operations with SQLite
+  - Visualization generation with Plotly
+
+- **API Layer:**  
+  `main.py` implements a FastAPI server with endpoints for:
+  - `/scrape-jobs`: Job listing extraction
+  - `/extract-skills`: Skill identification from descriptions
+  - `/pipeline`: Full end-to-end processing
+
+- **App Entry Point:**  
+  `app.py` provides a simplified interface to the backend pipeline for direct application usage.
+
+<br>
 
 ## Installation
 
