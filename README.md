@@ -33,7 +33,7 @@ With data visualizations and an interactive chat interface, SkillFinder empowers
 | **Database**       | SQLite (in-memory)                       |
 | **API**            | FastAPI, Pydantic                        |
 | **Data Processing**| Pandas, Collections (Counter)            |
-| **Environment**    | Python 3.7+, python-dotenv               |
+| **Environment**    | Python 3.7+               |
 
 <br>
 
