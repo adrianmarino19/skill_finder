@@ -273,6 +273,7 @@ def run_pipeline(keywords: str, location: str, pages_to_scrape: int,
     jobs = scrape_jobs_with_descriptions(keywords, location, pages_to_scrape, headers,
                                          experience_level, remote, date_posted, benefits,
                                          easy_apply, sortby)
+    st.write(f"🔍 Scraped {len(jobs)} jobs") # debugging
     if not jobs:
         return None, None
 
