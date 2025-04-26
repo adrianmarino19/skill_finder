@@ -174,7 +174,6 @@ def scrape_jobs_with_descriptions(keywords: str, location: str, pages_to_scrape:
         soup = BeautifulSoup(response.content, "html.parser")
         cards = soup.find_all("div", class_="job-search-card")
 
-        jobs = []
         for card in cards:
             # — URL & Title
             link = card.select_one("a.base-card__full-link")
