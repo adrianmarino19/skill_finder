@@ -486,13 +486,12 @@ def answer_user_question(question: str, conversation_history=None):
 
 
 
-# At the very bottom of backend.py (or in test_scrape.py)
+# Debugging locally!
 
 if __name__ == "__main__":
     from urllib.parse import quote
     from backend import scrape_jobs_with_descriptions
 
-    # Use the same headers as in run_pipeline
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -515,6 +514,6 @@ if __name__ == "__main__":
         sortby=""
     )
 
-    print(f"🔍 Scraped total jobs: {len(jobs)}")
+    print(f"Scraped total jobs: {len(jobs)}")
     for i, job in enumerate(jobs[:5], start=1):
         print(f"{i}. {job['title']} @ {job['company']} — {job['location']}")
