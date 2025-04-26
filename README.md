@@ -8,6 +8,8 @@ With data visualizations and an interactive chat interface, SkillFinder empowers
 - **Compare Job Requirements:** Visualize trends across different roles and industries.
 - **Interactive Chat:** Ask questions about the job market or specific postings and receive data-driven insights.
 
+<br>
+
 ## Features
 
 - **Job Scraping Pipeline:**  
@@ -21,6 +23,8 @@ With data visualizations and an interactive chat interface, SkillFinder empowers
   - Uses conversation history for context-aware responses.
 - **Customizable Filters:**  
   - Advanced filtering options such as sort order, date posted, and benefits to refine job searches.
+ 
+<br>
 
 ## Installation
 
