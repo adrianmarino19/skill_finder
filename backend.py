@@ -15,10 +15,7 @@ import sqlite3
 import re
 import pandas as pd
 import streamlit as st
-import os, nltk
-
-
-
+import nltk, os
 nltk.data.path.append(os.path.join(os.getcwd(), "nltk_data"))
 
 
