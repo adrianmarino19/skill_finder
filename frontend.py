@@ -113,8 +113,14 @@ if st.button("Run Pipeline"):
         st.session_state.pipeline_ran = True
 
 if st.session_state.get("pipeline_ran"):
-    st.plotly_chart(st.session_state.fig_hard)
-    st.plotly_chart(st.session_state.fig_soft)
+    fig_hard = st.session_state.get("fig_hard")
+    fig_soft = st.session_state.get("fig_soft")
+    if fig_hard and fig_soft:
+        st.plotly_chart(fig_hard)
+        st.plotly_chart(fig_soft)
+    else:
+        st.error("No jobs were found (or an error occurred during scraping). Try adjusting your filters or check the logs.")
+
 
 st.markdown("---")
 

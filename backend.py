@@ -14,13 +14,15 @@ from collections import Counter
 import sqlite3
 import re
 import pandas as pd
+import streamlit as st
 
 # Ensure necessary NLTK resources are downloaded
 nltk.download('punkt')
 nltk.download('stopwords')
 
 load_dotenv()
-GEM_KEY = os.environ.get("GEM_KEY")
+# GEM_KEY = os.environ.get("GEM_KEY") LOCALLY!
+GEM_KEY = st.secrets["GEM_KEY"]
 client = genai.Client(api_key=GEM_KEY)
 
 remote_mapping = {"Onsite": "1", "Remote": "2", "Hybrid": "3"}
