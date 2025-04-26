@@ -10,7 +10,7 @@ With data visualizations and an interactive chat interface, SkillFinder empowers
 
 <br>
 
-## Data Flow & Features
+## 🔀 Data Flow & Features
 
 1. User inputs job search filters/parameters (job title, location, remote, etc) in Streamlit UI.
 2. Backend scrapes LinkedIn job listings.
