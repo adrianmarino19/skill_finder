@@ -1,7 +1,5 @@
 # SkillFinder 🔭
 
-[![Demo](https://img.shields.io/badge/Demo-SkillFinder_Streamlit-blue)](https://skillfinder.streamlit.app/)
-
 SkillFinder is an interactive Streamlit application that helps you discover in-demand skills by analyzing job postings from LinkedIn. Check it out [here](https://skillfinder.streamlit.app/)! 
 
 With data visualizations and an interactive chat interface, SkillFinder empowers you to:
